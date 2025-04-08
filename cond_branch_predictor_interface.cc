@@ -21,6 +21,13 @@
 #include "my_cond_branch_predictor.h"
 #include <cassert>
 
+#include "single_bit.h"
+#include "two_bit.h"
+#include "perceptron_predictor.h"
+#include "multilog_predictor.h"
+#include "tinynn_predictor.h"
+
+
 //
 // beginCondDirPredictor()
 // 
@@ -32,6 +39,11 @@ void beginCondDirPredictor()
     // setup sample_predictor
     cbp2016_tage_sc_l.setup();
     cond_predictor_impl.setup();
+    single_bit_predictor.setup();
+    two_bit_predictor.setup();
+    perceptron_predictor.setup();
+    multilog_predictor.setup();
+    tinynn_predictor.setup();
 }
 
 //
@@ -55,7 +67,13 @@ bool get_cond_dir_prediction(uint64_t seq_no, uint8_t piece, uint64_t pc, const 
 {
     const bool tage_sc_l_pred =  cbp2016_tage_sc_l.predict(seq_no, piece, pc);
     const bool my_prediction = cond_predictor_impl.predict(seq_no, piece, pc, tage_sc_l_pred);
-    return my_prediction;
+    const bool single_bit_pred = single_bit_predictor.predict(pc);
+    const bool two_bit_pred = two_bit_predictor.predict(pc);
+    const bool perceptron_pred = perceptron_predictor.predict(seq_no,piece,pc);
+
+    const bool multilog_pred = multilog_predictor.predict(seq_no,piece,pc);
+    const bool tinynn_pred = tinynn_predictor.predict(seq_no,piece,pc);
+    return tinynn_pred;
 }
 
 //
@@ -98,6 +116,11 @@ void spec_update(uint64_t seq_no, uint8_t piece, uint64_t pc, InstClass inst_cla
     {
         cbp2016_tage_sc_l.history_update(seq_no, piece, pc, br_type, pred_dir, resolve_dir, next_pc);
         cond_predictor_impl.history_update(seq_no, piece, pc, resolve_dir, next_pc);
+        single_bit_predictor.update(pc, resolve_dir);
+        two_bit_predictor.update(pc, resolve_dir);
+        perceptron_predictor.update(seq_no,piece,pc,resolve_dir);
+        multilog_predictor.train(seq_no,piece,pc,resolve_dir);
+        tinynn_predictor.train(seq_no,piece,pc,resolve_dir);
     }
     else
     {
@@ -175,4 +198,9 @@ void endCondDirPredictor ()
 {
     cbp2016_tage_sc_l.terminate();
     cond_predictor_impl.terminate();
+    single_bit_predictor.terminate();
+    two_bit_predictor.terminate();
+    perceptron_predictor.terminate();
+    multilog_predictor.terminate();
+    tinynn_predictor.terminate();
 }
