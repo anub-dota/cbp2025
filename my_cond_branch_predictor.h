@@ -2,6 +2,9 @@
 #define _PREDICTOR_H_
 
 #include <stdlib.h>
+#include <iostream>
+#include <string>
+#include <fstream>
 
 struct SampleHist
 {
@@ -19,10 +22,15 @@ class SampleCondPredictor
 {
         SampleHist active_hist;
         std::unordered_map<uint64_t/*key*/, SampleHist/*val*/> pred_time_histories;
+
+        std::ofstream csv_output;
+
     public:
 
         SampleCondPredictor (void)
         {
+            csv_output = std::ofstream("example_trace.csv");
+            csv_output << "seq_no,piece,PC,resolveDir\n";
         }
 
         void setup()
@@ -68,6 +76,9 @@ class SampleCondPredictor
             const auto pred_hist_key = get_unique_inst_id(seq_no, piece);
             const auto& pred_time_history = pred_time_histories.at(pred_hist_key);
             update(PC, resolveDir, predDir, nextPC, pred_time_history);
+            
+            csv_output << seq_no << "," << (int)piece << "," << PC << "," << resolveDir << "," << "\n";
+
             pred_time_histories.erase(pred_hist_key);
         }
 
